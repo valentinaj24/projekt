@@ -68,33 +68,54 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
         run: pnpm build
 
+      - name: Prepare production dependencies
+        run: |
+          pnpm --filter frontend --prod deploy deploy-frontend
+
       - name: Prepare standalone artifact
         run: |
-          mkdir -p frontend/.next/standalone/frontend/.next/static
-          cp -R frontend/.next/static/. frontend/.next/standalone/frontend/.next/static/
+          set -e
+
+          mkdir -p runtime
+
+          cp -a frontend/.next/standalone/. runtime/
+
+          rm -rf runtime/node_modules
+          rm -rf runtime/frontend/node_modules
+          rm -rf runtime/backend/node_modules
+
+          mkdir -p runtime/frontend/node_modules
+          cp -a deploy-frontend/node_modules/. runtime/frontend/node_modules/
+
+          mkdir -p runtime/frontend/.next/static
+          cp -a frontend/.next/static/. runtime/frontend/.next/static/
 
           if [ -d frontend/public ]; then
-            cp -R frontend/public frontend/.next/standalone/frontend/public
+            mkdir -p runtime/frontend/public
+            cp -a frontend/public/. runtime/frontend/public/
           fi
 
-          mkdir -p frontend/.next/standalone/frontend/node_modules/@swc
-          cp -RL "$(find node_modules/.pnpm -path '*/node_modules/@swc/helpers' -type d -print -quit)" frontend/.next/standalone/frontend/node_modules/@swc/helpers
+          test -f runtime/frontend/server.js
+          test -f runtime/frontend/node_modules/next/package.json
 
-          cp -aL frontend/.next/standalone/. frontend/.next/standalone-copy/
-          rm -rf frontend/.next/standalone
-          mv frontend/.next/standalone-copy frontend/.next/standalone
+          tar -czf prvihxi-build.tar.gz -C runtime .
 
-      - name: Verify standalone dependencies
+      - name: Verify production artifact
         run: |
-          cd frontend/.next/standalone
-          node -e "require('./frontend/node_modules/next/dist/shared/lib/constants.js'); console.log('Next.js dependencies OK')"
+          mkdir -p verify-runtime
+          tar -xzf prvihxi-build.tar.gz -C verify-runtime
+
+          cd verify-runtime/frontend
+
+          node -e "require('next/dist/server/config.js'); console.log('Next.js dependencies OK')"
+          node -e "console.log('Backend:', require.resolve('backend/db'))"
+          node -e "console.log('Prisma:', require.resolve('@prisma/client', { paths: [require('path').dirname(require.resolve('backend/db'))] }))"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: prvihxi-build
-          path: frontend/.next/standalone/
-          include-hidden-files: true
+          path: prvihxi-build.tar.gz
           retention-days: 7
           if-no-files-found: error
 
@@ -156,6 +177,11 @@ jobs:
         with:
           name: prvihxi-build
           path: artifact
+
+      - name: Verify downloaded artifact
+        run: |
+          test -f artifact/prvihxi-build.tar.gz
+          tar -tzf artifact/prvihxi-build.tar.gz > /dev/null
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
