@@ -76,6 +76,16 @@ jobs:
             cp -R frontend/public frontend/.next/standalone/frontend/public
           fi
 
+          # Preserve pnpm symlinks and their targets in the artifact
+          cp -aL frontend/.next/standalone/. frontend/.next/standalone-copy/
+          rm -rf frontend/.next/standalone
+          mv frontend/.next/standalone-copy frontend/.next/standalone
+
+      - name: Verify standalone dependencies
+        run: |
+          cd frontend/.next/standalone
+          node -e "require('./frontend/node_modules/next/dist/shared/lib/constants.js'); console.log('Next.js dependencies OK')"
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
