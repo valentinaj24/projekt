@@ -72,11 +72,14 @@ jobs:
         run: |
           mkdir -p frontend/.next/standalone/frontend/.next/static
           cp -R frontend/.next/static/. frontend/.next/standalone/frontend/.next/static/
+
           if [ -d frontend/public ]; then
             cp -R frontend/public frontend/.next/standalone/frontend/public
           fi
 
-          # Preserve pnpm symlinks and their targets in the artifact
+          mkdir -p frontend/.next/standalone/frontend/node_modules/@swc
+          cp -RL frontend/node_modules/@swc/helpers frontend/.next/standalone/frontend/node_modules/@swc/helpers
+
           cp -aL frontend/.next/standalone/. frontend/.next/standalone-copy/
           rm -rf frontend/.next/standalone
           mv frontend/.next/standalone-copy frontend/.next/standalone
