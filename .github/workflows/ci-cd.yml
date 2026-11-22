@@ -106,8 +106,10 @@ jobs:
           tar -xzf prvihxi-build.tar.gz -C verify-runtime
 
           cd verify-runtime/frontend
+
           node -e "require('next/dist/server/config.js'); console.log('Next.js dependencies OK')"
-          node -e "require.resolve('@prisma/client', { paths: [require.resolve('backend/package.json')] }); console.log('Prisma dependency OK')"
+          node -e "console.log('Backend:', require.resolve('backend/db'))"
+          node -e "console.log('Prisma:', require.resolve('@prisma/client', { paths: [require('path').dirname(require.resolve('backend/db'))] }))"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
