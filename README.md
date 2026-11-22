@@ -104,3 +104,27 @@ Seed ustvari tudi razpored 9 krogov glede na datum zagona: 1. krog je bil prejš
 ## Način dela
 
 Razvoj poteka po strategiji GitHub Flow: vsaka sprememba nastane v svoji veji in se v `main` združi prek pull requesta. Veja `main` je zaščitena.
+
+
+## CI/CD
+
+![CI/CD Pipeline](https://github.com/valentinaj24/projekt/actions/workflows/ci-cd.yml/badge.svg)
+
+### Nameščena aplikacija
+
+Aplikacija PrvihXI je javno dostopna na povezavi:
+
+https://prvihxi-docker.onrender.com
+
+### Faze CI/CD cevovoda
+
+CI/CD cevovod je implementiran z GitHub Actions in vključuje štiri faze:
+
+- **Lint:** preverjanje kakovosti kode frontenda in backenda.
+- **Build:** generiranje Prisma Clienta, gradnja aplikacije Next.js in priprava produkcijskega artefakta.
+- **Test:** izvajanje avtomatiziranih testov frontenda in backenda z orodjem Vitest ter ustvarjanje poročil o pokritosti kode.
+- **Deploy:** po uspešno zaključenih fazah lint, build in test se ob potisku na vejo `main` prenese artefakt iz faze build, pripravi Docker slika in objavi v GitHub Container Registry (GHCR). Namestitev na Render se samodejno sproži prek Deploy Hooka.
+
+Cevovod se sproži ob pull requestih za vejo `main` in ob potisku sprememb na vejo `main`. Faza deploy se izvaja samo ob potisku na `main`.
+
+Veja `main` je zaščitena z obveznimi preverjanji `lint`, `build` in `test`, zato združitev pull requesta ni dovoljena, če katero od preverjanj ni uspešno.
