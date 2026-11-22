@@ -68,45 +68,52 @@ jobs:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
         run: pnpm build
 
+      - name: Prepare production dependencies
+        run: |
+          pnpm --filter frontend --prod deploy deploy-frontend
+
       - name: Prepare standalone artifact
         run: |
           set -e
 
-          STANDALONE="frontend/.next/standalone"
+          mkdir -p runtime
 
-          mkdir -p "$STANDALONE/frontend/.next/static"
-          cp -R frontend/.next/static/. "$STANDALONE/frontend/.next/static/"
+          cp -a frontend/.next/standalone/. runtime/
+
+          rm -rf runtime/node_modules
+          rm -rf runtime/frontend/node_modules
+          rm -rf runtime/backend/node_modules
+
+          mkdir -p runtime/frontend/node_modules
+          cp -a deploy-frontend/node_modules/. runtime/frontend/node_modules/
+
+          mkdir -p runtime/frontend/.next/static
+          cp -a frontend/.next/static/. runtime/frontend/.next/static/
 
           if [ -d frontend/public ]; then
-            mkdir -p "$STANDALONE/frontend/public"
-            cp -R frontend/public/. "$STANDALONE/frontend/public/"
+            mkdir -p runtime/frontend/public
+            cp -a frontend/public/. runtime/frontend/public/
           fi
 
-          # Copy pnpm dependency store
-          mkdir -p "$STANDALONE/node_modules/.pnpm"
-          cp -a node_modules/.pnpm/. "$STANDALONE/node_modules/.pnpm/"
+          test -f runtime/frontend/server.js
+          test -f runtime/frontend/node_modules/next/package.json
 
-          # Replace backend symlink with directory
-          BACKEND_PATH="$STANDALONE/node_modules/.pnpm/node_modules/backend"
-          rm -f "$BACKEND_PATH"
-          cp -a backend "$BACKEND_PATH"
+          tar -czf prvihxi-build.tar.gz -C runtime .
 
-          # Resolve remaining symlinks into real files
-          cp -aL "$STANDALONE/." frontend/.next/standalone-copy/
-          rm -rf "$STANDALONE"
-          mv frontend/.next/standalone-copy "$STANDALONE"
-
-      - name: Verify standalone dependencies
+      - name: Verify production artifact
         run: |
-          cd frontend/.next/standalone
-          node -e "require('./frontend/node_modules/next/dist/shared/lib/constants.js'); require('./frontend/node_modules/next/dist/server/config.js'); console.log('Next.js dependencies OK')"
+          mkdir -p verify-runtime
+          tar -xzf prvihxi-build.tar.gz -C verify-runtime
+
+          cd verify-runtime/frontend
+          node -e "require('next/dist/server/config.js'); console.log('Next.js dependencies OK')"
+          node -e "require.resolve('@prisma/client', { paths: [require.resolve('backend/package.json')] }); console.log('Prisma dependency OK')"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: prvihxi-build
-          path: frontend/.next/standalone/
-          include-hidden-files: true
+          path: prvihxi-build.tar.gz
           retention-days: 7
           if-no-files-found: error
 
@@ -171,9 +178,8 @@ jobs:
 
       - name: Verify downloaded artifact
         run: |
-          test -f artifact/frontend/server.js
-          test -f artifact/frontend/node_modules/next/dist/server/config.js
-          node -e "require('./artifact/frontend/node_modules/next/dist/server/config.js'); console.log('Downloaded artifact OK')"
+          test -f artifact/prvihxi-build.tar.gz
+          tar -tzf artifact/prvihxi-build.tar.gz > /dev/null
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
