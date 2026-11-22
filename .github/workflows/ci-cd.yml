@@ -78,7 +78,7 @@ jobs:
           fi
 
           mkdir -p frontend/.next/standalone/frontend/node_modules/@swc
-          cp -RL frontend/node_modules/@swc/helpers frontend/.next/standalone/frontend/node_modules/@swc/helpers
+          cp -RL "$(find node_modules/.pnpm -path '*/node_modules/@swc/helpers' -type d -print -quit)" frontend/.next/standalone/frontend/node_modules/@swc/helpers
 
           cp -aL frontend/.next/standalone/. frontend/.next/standalone-copy/
           rm -rf frontend/.next/standalone
