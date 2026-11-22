@@ -10,6 +10,14 @@ const nextConfig: NextConfig = {
   // Backend v TypeScriptu
   transpilePackages: ["backend"],
 
+  // Keep database dependencies external to Turbopack
+  serverExternalPackages: [
+    "@prisma/client",
+    "@prisma/adapter-pg",
+    "pg",
+    "better-auth",
+  ],
+
   agentRules: false,
 
   // Tailwind
