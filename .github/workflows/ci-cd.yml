@@ -72,9 +72,22 @@ jobs:
         run: |
           mkdir -p frontend/.next/standalone/frontend/.next/static
           cp -R frontend/.next/static/. frontend/.next/standalone/frontend/.next/static/
+
           if [ -d frontend/public ]; then
             cp -R frontend/public frontend/.next/standalone/frontend/public
           fi
+
+          mkdir -p frontend/.next/standalone/frontend/node_modules/@swc
+          cp -RL "$(find node_modules/.pnpm -path '*/node_modules/@swc/helpers' -type d -print -quit)" frontend/.next/standalone/frontend/node_modules/@swc/helpers
+
+          cp -aL frontend/.next/standalone/. frontend/.next/standalone-copy/
+          rm -rf frontend/.next/standalone
+          mv frontend/.next/standalone-copy frontend/.next/standalone
+
+      - name: Verify standalone dependencies
+        run: |
+          cd frontend/.next/standalone
+          node -e "require('./frontend/node_modules/next/dist/shared/lib/constants.js'); console.log('Next.js dependencies OK')"
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
