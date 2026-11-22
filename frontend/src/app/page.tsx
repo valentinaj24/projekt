@@ -1,4 +1,3 @@
-const namernaLintGreska = 123;
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "backend/auth";
