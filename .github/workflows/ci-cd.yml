@@ -78,14 +78,12 @@ jobs:
             cp -R frontend/public/. frontend/.next/standalone/frontend/public/
           fi
 
-          # Copy pnpm dependency store
-          mkdir -p frontend/.next/standalone/node_modules
-          cp -a node_modules/.pnpm frontend/.next/standalone/node_modules/
+          # Copy pnpm dependency store and workspace package
+          mkdir -p frontend/.next/standalone/node_modules/.pnpm/node_modules
+          cp -a node_modules/.pnpm/. frontend/.next/standalone/node_modules/.pnpm/
+          cp -a backend frontend/.next/standalone/node_modules/.pnpm/node_modules/backend
 
-          # Preserve links and their targets
-          cp -aL frontend/.next/standalone/. frontend/.next/standalone-copy/
-          rm -rf frontend/.next/standalone
-          mv frontend/.next/standalone-copy frontend/.next/standalone
+          # Keep symbolic links intact
 
       - name: Verify standalone dependencies
         run: |
