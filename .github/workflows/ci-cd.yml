@@ -64,15 +64,26 @@ jobs:
         run: pnpm db:generate
 
       - name: Build frontend
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
         run: pnpm build
+
+      - name: Prepare standalone artifact
+        run: |
+          mkdir -p frontend/.next/standalone/frontend/.next/static
+          cp -R frontend/.next/static/. frontend/.next/standalone/frontend/.next/static/
+          if [ -d frontend/public ]; then
+            cp -R frontend/public frontend/.next/standalone/frontend/public
+          fi
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: prvihxi-build
-          path: frontend/.next
+          path: frontend/.next/standalone/
           include-hidden-files: true
           retention-days: 7
+          if-no-files-found: error
 
   test:
     name: test

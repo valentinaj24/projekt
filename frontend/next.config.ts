@@ -1,12 +1,17 @@
+
 import type { NextConfig } from "next";
 import { config } from "dotenv";
 
 config({ path: "../.env" });
 
 const nextConfig: NextConfig = {
-  // backend v TypeScriptu
+  output: "standalone",
+
+  // Backend v TypeScriptu
   transpilePackages: ["backend"],
+
   agentRules: false,
+
   // Tailwind
   turbopack: {
     rules: {
